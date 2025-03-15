@@ -5,10 +5,14 @@ import random
 from pygame import Surface, Rect
 from pygame.font import Font
 
+from code.EntityMediator import EntityMediator
 from code.const import COLLOR_WHITE, WIN_HEIGHT, MENU_OPTION, EVENT_USER
+from code.enemy import Enemy
 from code.entity import Entity
 from code.entityFactory import EntityFactory
 import pygame
+
+from code.player import Player
 
 
 class Level:
@@ -21,7 +25,7 @@ class Level:
         self.entity_list.extend(EntityFactory.get_entity('Level1Bg'))
         self.entity_list.append(EntityFactory.get_entity('Player1'))
         self.timeout = 20000 # 20 segundos
-        if self.game_mode == (MENU_OPTION[1] or MENU_OPTION[2]):
+        if self.game_mode == MENU_OPTION[1] or self.game_mode == MENU_OPTION[2]:
             self.entity_list.append(EntityFactory.get_entity('Player2'))
         pygame.time.set_timer(EVENT_USER, 4000)
 
@@ -35,6 +39,10 @@ class Level:
             for ent in self.entity_list:
                 self.window.blit(source=ent.surf, dest=ent.rect)
                 ent.move()
+                if isinstance(ent, (Player, Enemy)):
+                    shot = ent.shot()
+                    if shot is not None:
+                        self.entity_list.append(shot)
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -49,6 +57,8 @@ class Level:
             self.level_text(14, f'Entidade: {len(self.entity_list)}', COLLOR_WHITE, (10, WIN_HEIGHT - 20))
 
             pygame.display.flip()
+            EntityMediator.verify_collision(entity_list=self.entity_list)
+            EntityMediator.verify_health(entity_list=self.entity_list)
 
     def level_text(self, text_size: int, text: str, text_color: tuple, text_pos: tuple):
         text_font: Font = pygame.font.SysFont(name="Lucida Sans Typewriter", size=text_size)
